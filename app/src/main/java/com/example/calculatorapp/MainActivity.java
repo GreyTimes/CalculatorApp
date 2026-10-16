@@ -20,6 +20,6 @@ public class MainActivity extends AppCompatActivity {
         // Initialize logic handler
         calculatorLogic = new CalculatorLogic();
 
-        // TODO: Member 5 - Wire up calculator buttons to display and logic
+        // TODO: Wire up calculator buttons to display and logic
     }
 }

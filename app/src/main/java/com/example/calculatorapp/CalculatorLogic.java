@@ -13,12 +13,14 @@ public class CalculatorLogic {
     }
 
     public double multiply(double a, double b) {
-        // TODO: Implement multiplication logic here
-        return 0.0;
+
+        return a * b;
     }
 
     public double divide(double a, double b) {
-        // TODO: Implement division and handle division by zero (throw IllegalArgumentException)
-        return 0.0;
+        if (b == 0) {
+            throw new IllegalArgumentException("Cannot divide by zero");
+        }
+        return a / b;
     }
 }

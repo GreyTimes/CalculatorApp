@@ -3,13 +3,11 @@ package com.example.calculatorapp;
 public class CalculatorLogic {
 
     public double add(double a, double b) {
-        // TODO:Implement addition logic here
-        return 0.0;
+        return a+b;
     }
 
     public double subtract(double a, double b) {
-        // TODO: Implement subtraction logic here
-        return 0.0;
+        return a-b;
     }
 
     public double multiply(double a, double b) {

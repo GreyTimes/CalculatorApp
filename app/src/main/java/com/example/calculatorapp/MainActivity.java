@@ -11,172 +11,140 @@ public class MainActivity extends AppCompatActivity {
 
     private EditText editText;
     private TextView resultText;
-    private CalculatorLogic calculatorLogic;
-
-    private double firstNumber;
-    private String pendingOperation = "";
+    private ExpressionEvaluator evaluator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Link UI components
         editText = findViewById(R.id.editText2);
         resultText = findViewById(R.id.resultText);
 
-        // Initialize logic handler
-        calculatorLogic = new CalculatorLogic();
+        evaluator = new ExpressionEvaluator();
 
-        // Wire up calculator buttons to display and logic
+        // Number buttons
         int[] numberButtonIds = {
-                R.id.num1,
-                R.id.num2,
-                R.id.num3,
-                R.id.num4,
-                R.id.num5,
-                R.id.num6,
-                R.id.num7,
-                R.id.num8,
-                R.id.num9,
+                R.id.num1, R.id.num2, R.id.num3,
+                R.id.num4, R.id.num5, R.id.num6,
+                R.id.num7, R.id.num8, R.id.num9,
                 R.id.zero
         };
+
         for (int id : numberButtonIds) {
             Button button = findViewById(id);
 
-            button.setOnClickListener(v -> {
-                String currentText = editText.getText().toString();
-                String number = button.getText().toString();
-
-                editText.setText(currentText + number);
-            });
+            button.setOnClickListener(v ->
+                    appendText(button.getText().toString()));
         }
+
         // Decimal point
-        Button dotButton = findViewById(R.id.dot);
+        findViewById(R.id.dot).setOnClickListener(v ->
+                appendText("."));
 
-        dotButton.setOnClickListener(v -> {
-            String currentText = editText.getText().toString();
+        // Basic arithmetic operations
+        findViewById(R.id.add).setOnClickListener(v ->
+                appendText("+"));
 
-            if (!currentText.contains(".")) {
-                if (currentText.isEmpty()) {
-                    editText.setText("0.");
-                } else {
-                    editText.setText(currentText + ".");
-                }
-            }
-        });
+        findViewById(R.id.sub).setOnClickListener(v ->
+                appendText("-"));
 
-        // Addition
-        Button addButton = findViewById(R.id.add);
-        addButton.setOnClickListener(v -> selectOperation("+"));
+        findViewById(R.id.mul).setOnClickListener(v ->
+                appendText("*"));
 
-        // Subtraction
-        Button subButton = findViewById(R.id.sub);
-        subButton.setOnClickListener(v -> selectOperation("-"));
+        findViewById(R.id.div).setOnClickListener(v ->
+                appendText("/"));
 
-        // Multiplication
-        Button mulButton = findViewById(R.id.mul);
-        mulButton.setOnClickListener(v -> selectOperation("*"));
+        // Power
+        findViewById(R.id.power).setOnClickListener(v ->
+                appendText("^"));
 
-        // Division
-        Button divButton = findViewById(R.id.div);
-        divButton.setOnClickListener(v -> selectOperation("/"));
+        // Scientific functions
+        setFunctionButton(R.id.sin, "sin(");
+        setFunctionButton(R.id.cos, "cos(");
+        setFunctionButton(R.id.tan, "tan(");
+        setFunctionButton(R.id.sqrt, "sqrt(");
+        setFunctionButton(R.id.square, "square(");
+        setFunctionButton(R.id.log, "log(");
+        setFunctionButton(R.id.ln, "ln(");
 
-        // Clear everything
-        Button clearButton = findViewById(R.id.clear_text);
+        // Mathematical constants
+        findViewById(R.id.pi).setOnClickListener(v ->
+                appendText("pi"));
 
-        clearButton.setOnClickListener(v -> {
+        findViewById(R.id.euler).setOnClickListener(v ->
+                appendText("e"));
+
+        // Parentheses
+        findViewById(R.id.openParen).setOnClickListener(v ->
+                appendText("("));
+
+        findViewById(R.id.closeParen).setOnClickListener(v ->
+                appendText(")"));
+
+        // Clear
+        findViewById(R.id.clear_text).setOnClickListener(v -> {
             editText.setText("");
             resultText.setText("0");
-            pendingOperation = "";
-            firstNumber = 0;
         });
 
-        // Submit calculation
-        Button submitButton = findViewById(R.id.submit);
-
-        submitButton.setOnClickListener(v -> calculateResult());
+        // Calculate
+        findViewById(R.id.submit).setOnClickListener(v ->
+                calculateResult());
     }
 
-    private void selectOperation(String operation) {
-        String currentText = editText.getText().toString();
+    // Insert text at the current cursor position
+    private void appendText(String text) {
+        int start = editText.getSelectionStart();
+        int end = editText.getSelectionEnd();
 
-        if (currentText.isEmpty()) {
-            Toast.makeText(this,
-                    "Enter the first number",
-                    Toast.LENGTH_SHORT).show();
-            return;
+        if (start < 0 || end < 0) {
+            start = editText.length();
+            end = start;
         }
 
-        try {
-            firstNumber = Double.parseDouble(currentText);
-            pendingOperation = operation;
+        editText.getText().replace(
+                Math.min(start, end),
+                Math.max(start, end),
+                text
+        );
 
-            editText.setText("");
-
-        } catch (NumberFormatException e) {
-            Toast.makeText(this,
-                    "Invalid number",
-                    Toast.LENGTH_SHORT).show();
-        }
+        editText.setSelection(
+                Math.min(start, end) + text.length()
+        );
     }
 
+    // Connect scientific buttons
+    private void setFunctionButton(int buttonId, String function) {
+        findViewById(buttonId).setOnClickListener(v ->
+                appendText(function));
+    }
+
+    // Evaluate the complete expression
     private void calculateResult() {
-        String currentText = editText.getText().toString();
+        String expression = editText.getText().toString().trim();
 
-        if (pendingOperation.isEmpty()) {
+        if (expression.isEmpty()) {
             Toast.makeText(this,
-                    "Select an operation first",
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (currentText.isEmpty()) {
-            Toast.makeText(this,
-                    "Enter the second number",
+                    "Enter an expression first",
                     Toast.LENGTH_SHORT).show();
             return;
         }
 
         try {
-            double secondNumber = Double.parseDouble(currentText);
-            double result;
+            double result = evaluator.evaluate(expression);
 
-            switch (pendingOperation) {
-                case "+":
-                    result = calculatorLogic.add(firstNumber, secondNumber);
-                    break;
+            String formattedResult = formatResult(result);
 
-                case "-":
-                    result = calculatorLogic.subtract(firstNumber, secondNumber);
-                    break;
-
-                case "*":
-                    result = calculatorLogic.multiply(firstNumber, secondNumber);
-                    break;
-
-                case "/":
-                    result = calculatorLogic.divide(firstNumber, secondNumber);
-                    break;
-
-                default:
-                    return;
-            }
-
-            resultText.setText(formatResult(result));
-
-            // Prepare for another calculation
-            editText.setText(formatResult(result));
-            pendingOperation = "";
-
-        } catch (NumberFormatException e) {
-            Toast.makeText(this,
-                    "Invalid number",
-                    Toast.LENGTH_SHORT).show();
+            resultText.setText(formattedResult);
+            editText.setText(formattedResult);
+            editText.setSelection(editText.length());
 
         } catch (IllegalArgumentException e) {
             Toast.makeText(this,
-                    "Cannot divide by zero",
+                    e.getMessage() == null
+                            ? "Invalid expression"
+                            : e.getMessage(),
                     Toast.LENGTH_SHORT).show();
         }
     }

@@ -215,8 +215,104 @@
                 android:text="/" />
         </TableRow>
 
+
     </TableLayout>
 
+    <!-- Scientific calculator buttons -->
+    <GridLayout
+        android:id="@+id/scientificLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:columnCount="4"
+        android:alignmentMode="alignMargins"
+        android:useDefaultMargins="true">
+
+        <Button
+            android:id="@+id/sin"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:text="sin" />
+
+        <Button
+            android:id="@+id/cos"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:text="cos" />
+
+        <Button
+            android:id="@+id/tan"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:text="tan" />
+
+        <Button
+            android:id="@+id/sqrt"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:text="√" />
+
+        <Button
+            android:id="@+id/square"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:text="x²" />
+
+        <Button
+            android:id="@+id/power"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:text="xʸ" />
+
+        <Button
+            android:id="@+id/log"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:text="log" />
+
+        <Button
+            android:id="@+id/ln"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:text="ln" />
+
+        <Button
+            android:id="@+id/pi"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:text="π" />
+
+        <Button
+            android:id="@+id/euler"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:text="e" />
+
+        <Button
+            android:id="@+id/openParen"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:text="(" />
+
+        <Button
+            android:id="@+id/closeParen"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:text=")" />
+
+    </GridLayout>
 
     <Button
         android:id="@+id/submit"

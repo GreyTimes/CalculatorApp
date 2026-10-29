@@ -1,6 +1,4 @@
 package com.example.calculatorapp;
-
-
 public class ExpressionValidator {
 
     public static boolean isValid(String expression) {
@@ -26,7 +24,6 @@ public class ExpressionValidator {
         Parser(String input) {
             this.input = input;
         }
-
         boolean isAtEnd() {
             skipSpaces();
             return pos == input.length();
@@ -92,6 +89,9 @@ public class ExpressionValidator {
         }
 
         private void parsePrimary() {
+            skipSpaces();
+
+            // 1. Έλεγχος για παρενθέσεις
             if (match('(')) {
                 parseExpression();
 
@@ -104,6 +104,43 @@ public class ExpressionValidator {
                 return;
             }
 
+            // 2. Έλεγχος για τετραγωνική ρίζα (√)
+            if (match('√')) {
+                parseUnary();
+                return;
+            }
+
+            // 3. Έλεγχος για συναρτήσεις ή σταθερές (γράμματα)
+            if (pos < input.length() && Character.isLetter(input.charAt(pos))) {
+                int start = pos;
+                while (pos < input.length() && Character.isLetter(input.charAt(pos))) {
+                    pos++;
+                }
+                String word = input.substring(start, pos).toLowerCase();
+
+                // Έλεγχος σταθερών (pi, π, e)
+                if (word.equals("pi") || word.equals("π") || word.equals("e")) {
+                    return;
+                }
+
+                // Έλεγχος επιστημονικών συναρτήσεων (sin, cos, tan, log, ln)
+                if (word.equals("sin") || word.equals("cos") || word.equals("tan")
+                        || word.equals("log") || word.equals("ln")) {
+                    skipSpaces();
+                    if (!match('(')) {
+                        throw new IllegalArgumentException("Expected '(' after function " + word);
+                    }
+                    parseExpression();
+                    if (!match(')')) {
+                        throw new IllegalArgumentException("Missing closing parenthesis for function " + word);
+                    }
+                    return;
+                }
+
+                throw new IllegalArgumentException("Unknown identifier: " + word);
+            }
+
+            // 4. Έλεγχος για αριθμούς
             parseNumber();
         }
 

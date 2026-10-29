@@ -1,193 +1,127 @@
 package com.example.calculatorapp;
 
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Button;
 import android.widget.Toast;
+import androidx.appcompat.app.AppCompatActivity;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     private EditText editText;
     private TextView resultText;
-    private CalculatorLogic calculatorLogic;
+    private ExpressionTokenizer tokenizer;
 
-    private double firstNumber;
-    private String pendingOperation = "";
+    private ExpressionEvaluator evaluator = new ExpressionEvaluator();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Link UI components
+        // Σύνδεση στοιχείων UI
         editText = findViewById(R.id.editText2);
         resultText = findViewById(R.id.resultText);
 
-        // Initialize logic handler
-        calculatorLogic = new CalculatorLogic();
+        // Αρχικοποίηση του Tokenizer
+        tokenizer = new ExpressionTokenizer();
 
-        // Wire up calculator buttons to display and logic
-        int[] numberButtonIds = {
-                R.id.num1,
-                R.id.num2,
-                R.id.num3,
-                R.id.num4,
-                R.id.num5,
-                R.id.num6,
-                R.id.num7,
-                R.id.num8,
-                R.id.num9,
-                R.id.zero
-        };
-        for (int id : numberButtonIds) {
-            Button button = findViewById(id);
+        // --- 1. Σύνδεση Αριθμών ---
+        setupButton(R.id.num1, "1");
+        setupButton(R.id.num2, "2");
+        setupButton(R.id.num3, "3");
+        setupButton(R.id.num4, "4");
+        setupButton(R.id.num5, "5");
+        setupButton(R.id.num6, "6");
+        setupButton(R.id.num7, "7");
+        setupButton(R.id.num8, "8");
+        setupButton(R.id.num9, "9");
+        setupButton(R.id.zero, "0");
 
-            button.setOnClickListener(v -> {
-                String currentText = editText.getText().toString();
-                String number = button.getText().toString();
+        // --- 2. Σύνδεση Βασικών Πράξεων & Συμβόλων ---
+        setupButton(R.id.add, "+");
+        setupButton(R.id.sub, "-");
+        setupButton(R.id.mul, "*");
+        setupButton(R.id.div, "/");
+        setupButton(R.id.dot, ".");
+        setupButton(R.id.openParen, "(");
+        setupButton(R.id.closeParen, ")");
+        setupButton(R.id.power, "^");
+        setupButton(R.id.sqrt, "√");
 
-                editText.setText(currentText + number);
-            });
-        }
-        // Decimal point
-        Button dotButton = findViewById(R.id.dot);
+        // --- 3. Σύνδεση Επιστημονικών Συναρτήσεων ---
+        setupFunctionButton(R.id.sin, "sin(");
+        setupFunctionButton(R.id.cos, "cos(");
+        setupFunctionButton(R.id.tan, "tan(");
+        setupFunctionButton(R.id.log, "log(");
+        setupFunctionButton(R.id.ln, "ln(");
+        setupFunctionButton(R.id.square, "^2");
 
-        dotButton.setOnClickListener(v -> {
-            String currentText = editText.getText().toString();
+        // --- 4. Σύνδεση Σταθερών ---
+        setupButton(R.id.pi, "pi"); // Χρησιμοποιείται "pi" για να το διαβάζει σωστά ο Tokenizer
+        setupButton(R.id.euler, "e");
 
-            if (!currentText.contains(".")) {
-                if (currentText.isEmpty()) {
-                    editText.setText("0.");
-                } else {
-                    editText.setText(currentText + ".");
-                }
-            }
-        });
-
-        // Addition
-        Button addButton = findViewById(R.id.add);
-        addButton.setOnClickListener(v -> selectOperation("+"));
-
-        // Subtraction
-        Button subButton = findViewById(R.id.sub);
-        subButton.setOnClickListener(v -> selectOperation("-"));
-
-        // Multiplication
-        Button mulButton = findViewById(R.id.mul);
-        mulButton.setOnClickListener(v -> selectOperation("*"));
-
-        // Division
-        Button divButton = findViewById(R.id.div);
-        divButton.setOnClickListener(v -> selectOperation("/"));
-
-        // Clear everything
+        // --- 5. Κουμπί Clear (CE) ---
         Button clearButton = findViewById(R.id.clear_text);
-
         clearButton.setOnClickListener(v -> {
             editText.setText("");
             resultText.setText("0");
-            pendingOperation = "";
-            firstNumber = 0;
         });
 
-        // Submit calculation
+        // --- 6. Κουμπί Submit (=) ---
         Button submitButton = findViewById(R.id.submit);
-
-        submitButton.setOnClickListener(v -> calculateResult());
+        submitButton.setOnClickListener(v -> evaluateExpression());
     }
 
-    private void selectOperation(String operation) {
-        String currentText = editText.getText().toString();
+    // Βοηθητική μέθοδος για απλή προσθήκη χαρακτήρα/συμβόλου
+    private void setupButton(int buttonId, String value) {
+        Button btn = findViewById(buttonId);
+        if (btn != null) {
+            btn.setOnClickListener(v -> {
+                String current = editText.getText().toString();
+                editText.setText(current + value);
+            });
+        }
+    }
 
-        if (currentText.isEmpty()) {
-            Toast.makeText(this,
-                    "Enter the first number",
-                    Toast.LENGTH_SHORT).show();
+    // Βοηθητική μέθοδος για συναρτήσεις που ανοίγουν παρενθέσεις αυτόματα
+    private void setupFunctionButton(int buttonId, String functionSyntax) {
+        Button btn = findViewById(buttonId);
+        if (btn != null) {
+            btn.setOnClickListener(v -> {
+                String current = editText.getText().toString();
+                editText.setText(current + functionSyntax);
+            });
+        }
+    }
+
+    // Η κεντρική λογική επικύρωσης και ανάλυσης της έκφρασης
+    private void evaluateExpression() {
+        String expression = editText.getText().toString();
+
+        if (expression.isEmpty()) {
+            Toast.makeText(this, "Παρακαλώ εισάγετε μια έκφραση", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Βήμα 1ο: Έλεγχος εγκυρότητας μέσω του ExpressionValidator
+        if (!ExpressionValidator.isValid(expression)) {
+            Toast.makeText(this, "Μη έγκυρη σύνταξη έκφρασης!", Toast.LENGTH_SHORT).show();
             return;
         }
 
         try {
-            firstNumber = Double.parseDouble(currentText);
-            pendingOperation = operation;
+            // Βήμα 2ο: Μετατροπή σε Tokens μέσω του ExpressionTokenizer
+            List<String> tokens = tokenizer.tokenize(expression);
 
-            editText.setText("");
+            double finalResult = evaluator.evaluate(tokens);
 
-        } catch (NumberFormatException e) {
-            Toast.makeText(this,
-                    "Invalid number",
-                    Toast.LENGTH_SHORT).show();
+            resultText.setText(String.valueOf(finalResult));
+
+        } catch (Exception e) {
+            Toast.makeText(this, "Σφάλμα: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
-    }
-
-    private void calculateResult() {
-        String currentText = editText.getText().toString();
-
-        if (pendingOperation.isEmpty()) {
-            Toast.makeText(this,
-                    "Select an operation first",
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (currentText.isEmpty()) {
-            Toast.makeText(this,
-                    "Enter the second number",
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        try {
-            double secondNumber = Double.parseDouble(currentText);
-            double result;
-
-            switch (pendingOperation) {
-                case "+":
-                    result = calculatorLogic.add(firstNumber, secondNumber);
-                    break;
-
-                case "-":
-                    result = calculatorLogic.subtract(firstNumber, secondNumber);
-                    break;
-
-                case "*":
-                    result = calculatorLogic.multiply(firstNumber, secondNumber);
-                    break;
-
-                case "/":
-                    result = calculatorLogic.divide(firstNumber, secondNumber);
-                    break;
-
-                default:
-                    return;
-            }
-
-            resultText.setText(formatResult(result));
-
-            // Prepare for another calculation
-            editText.setText(formatResult(result));
-            pendingOperation = "";
-
-        } catch (NumberFormatException e) {
-            Toast.makeText(this,
-                    "Invalid number",
-                    Toast.LENGTH_SHORT).show();
-
-        } catch (IllegalArgumentException e) {
-            Toast.makeText(this,
-                    "Cannot divide by zero",
-                    Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private String formatResult(double value) {
-        if (Double.isFinite(value)
-                && value == Math.rint(value)
-                && Math.abs(value) < 1.0e15) {
-            return String.valueOf((long) value);
-        }
-
-        return String.valueOf(value);
     }
 }
